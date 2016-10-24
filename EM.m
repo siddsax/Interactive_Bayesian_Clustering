@@ -4,14 +4,16 @@
 % of the previous steps 4) clst_rej are the clusters that were rejected in
 % the last step 5) clst_acc are the clusters that were accepted in
 % the last step 
-function [ theta , theta_old ] = EM( X, max_iter, K, theta_old, clst_rej, clst_acc )
+function [ theta , theta_new ] = EM( X, max_iter, K, theta_old, clst_rej, clst_acc )
 [N,~] = size(X);
 mu = X( randsample(N,K),:);
 co_var_mat = cell(K);
 priors = ones(1,K)/K;
 q = repmat(ones(1,N)/K,K,1);
 maxIterCD = 500;
-[~,S]=size(theta_old);  %Calculate the number of previous iterations
+if nargin == 6
+   [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
+end
 for i = 1:K
     co_var_mat{i} = X.'*X;
 end
@@ -28,19 +30,24 @@ while iter < max_iter
        end
        %implement stochastic co-ordinate descent using I_q_theta_thetaS and
        %KLDiv to get the 'q'(arbitrary probability) matrix
-       
-       iterCD = 0;
-       while (iterCD < maxIterCD) && sum(sum(abs(q-qTemp))) < epsilon
-          qTemp = q;
-          fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1),q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1),q(:,2:N)]);
-          q(:,1) = fminsearch(fun,q(:,1));
-          for j = 2:N-1
-              fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),q(:,j),q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),q(:,j),q(:,j+1:N)]);
-              q(:,j) = fminsearch(fun,q(:,j));
+       if nargin == 3
+          iterCD = 0;
+          while (iterCD < maxIterCD) && sum(sum(abs(q-qTemp))) < epsilon
+             qTemp = q;
+             fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1),q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1),q(:,2:N)]);
+             q(:,1) = fminsearch(fun,q(:,1));
+             for j = 2:N-1
+                fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),q(:,j),q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),q(:,j),q(:,j+1:N)]);
+                q(:,j) = fminsearch(fun,q(:,j));
+             end
+             fun = @(x)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),q(:,N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),q(:,N)]);
+             q(:,N) = fminsearch(fun,q(:,N));
           end
-          fun = @(x)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),q(:,N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),q(:,N)]);
-          q(:,N) = fminsearch(fun,q(:,N));
-      end
+       elseif nargin == 6 
+           q = P_h_given_x;
+       else
+           disp('Wrong number of arguments in EM');
+       end
    %the M Step
        % Update steps as a normal GMM
        for j = 1:N
@@ -76,6 +83,10 @@ for k = 1:K
 end
 
 %append the now generated theta at the end of theta_old
-theta_old{S+1} = theta;
-
+if nargin == 6
+    theta_old{S+1} = theta;
+    theta_new = theta_old;
+else
+    theta_new{1} = theta;
+end    
 end
