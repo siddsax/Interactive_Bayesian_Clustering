@@ -1,12 +1,27 @@
 % we find the probability of a single data point being generated from a
 % cluster. I.E P(h|x_i) is proportional to P(x_i|h)*P(h). Here P(x_i|h) is calculaated using the normal 
 % probab dist function whereas the P(h) is the prior_k found using parameters in last iteration. 
-function [ req_prob ] = P_h_givn_x( dat_pt_indice, X, co_var_mat_k, prior_k, mu_k )
-[~,D] = size(X); 
-part1 = power(1/(2*pi),D/2.0)*power(Det(co_var_mat_k),1/2.0);
-part2 = exp((-1/2)*((X(dat_pt_indice,:) - mu_k).')*(co_var_mat_k\(X(dat_pt_indice,:) - mu_k)));
-normal_part = (part1.^-1)*part2;
-req_prob = normal_part*prior_k;
+function E = P_h_givn_x(X,k,prior,mu,co_var_mat)
+[n,d] = size(X);
+a = (2*pi)^(0.5*d);
+S = zeros(1,k);
+iV = zeros(d,d,k);
+for j=1:k,
+    disp(j);
+    if co_var_mat{j}==zeros(d,d), co_var_mat{j}=ones(d,d)*eps; end
+    S(j) = sqrt(det(co_var_mat{j}));
+    disp(S(j));
+    iV(:,:,j) = inv(co_var_mat{j});    
+end
+E = zeros(n,k);
+for i=1:n    
+    for j=1:k
+        dXM = X(i,:)-mu(j,:);
+        pl = exp(-0.5*dXM*iV(:,:,j)*dXM')/(a*S(j));
+        E(i,j) = prior(1,j)*pl;
+    end
+    disp(i);
+    E(i,:) = E(i,:)/sum(E(i,:));
 end
 
 
