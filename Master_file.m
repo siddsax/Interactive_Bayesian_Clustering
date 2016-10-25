@@ -9,7 +9,7 @@ load('C:\Users\sidds\OneDrive\Documents\MATLAB\Project\cifar-10-batches-mat\data
 T = data;
 Y = labels;
 X = im2double(T);
-[~,theta] = EM(X(1:200,:), max_iter, K);
+[~,theta] = EM(X, max_iter, K);
 [N,~] = size(X);
 Probabilities = zeros(N,K);
 S = 1;
