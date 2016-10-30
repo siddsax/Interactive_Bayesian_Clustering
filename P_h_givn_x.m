@@ -7,10 +7,8 @@ a = (2*pi)^(0.5*d);
 S = zeros(1,k);
 iV = zeros(d,d,k);
 for j=1:k,
-    disp(j);
     if co_var_mat{j}==zeros(d,d), co_var_mat{j}=ones(d,d)*eps; end
     S(j) = sqrt(det(co_var_mat{j}));
-    disp(S(j));
     iV(:,:,j) = inv(co_var_mat{j});    
 end
 E = zeros(n,k);
@@ -20,7 +18,6 @@ for i=1:n
         pl = exp(-0.5*dXM*iV(:,:,j)*dXM')/(a*S(j));
         E(i,j) = prior(1,j)*pl;
     end
-    disp(i);
     E(i,:) = E(i,:)/sum(E(i,:));
 end
 
