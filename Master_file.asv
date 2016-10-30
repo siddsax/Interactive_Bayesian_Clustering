@@ -31,8 +31,8 @@ Probabilities = P_h_givn_x(X, K,prior, mu, co_var_mat);
  acc_clst = [];
  rej_clst = [];
  str = input('Do you want feedback Y/N','s');
- disp(class(str));
- if eq(str,'Y')
+ disp(
+ if eq(str{1},Y)
      for z = 1:K
          indice = input('accepted cluster number, press 0 when you are done');
          if indice == 0 break; end
@@ -50,10 +50,3 @@ Probabilities = P_h_givn_x(X, K,prior, mu, co_var_mat);
    mu(k,:) = theta{S,2,k};
    prior(1,k) = theta{S,3,k};
 end
-Probabilities = P_h_givn_x(X, K,prior, mu, co_var_mat);
- for i = 1:K
-    c=flipud(unique(sort(Probabilities(:,i))));
-    result=c(1:5); 
-    ind=find(Probabilities(:,i)>=c(10));
-    disp(ind);
- end    
