@@ -33,7 +33,7 @@ while iter < max_iter
    if nargin == 8
       iterCD = 0;
       qTemp = zeros(K,N);
-      while (iterCD < maxIterCD) && sum(sum(abs(q-qTemp))) < epsil
+      while (iterCD < maxIterCD) 
           qTemp = q;
           fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1),q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1),q(:,2:N)]);
           q(:,1) = fminsearch(fun,q(:,1));
