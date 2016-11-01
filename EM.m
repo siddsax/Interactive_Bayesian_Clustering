@@ -11,6 +11,7 @@ co_var_mat = cell(K);
 priors = ones(1,K)/K;
 q = repmat(ones(1,N)/K,K,1);
 maxIterCD = 500;
+beta = 1;
 if nargin == 8
    [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
 end
@@ -23,7 +24,7 @@ iter = 1;
 % pause;
 log_lik = zeros(1,max_iter);
 while iter < max_iter
-   disp(iter);
+%   disp(iter);
    %pause;
    %The E step
        %Calculate P(h|theta, x_j) for all j 
@@ -32,19 +33,30 @@ while iter < max_iter
        %KLDiv to get the 'q'(arbitrary probability) matrix
    if nargin == 8
       iterCD = 0;
-      qTemp = zeros(K,N);
-      while (iterCD < maxIterCD) 
+      while (iterCD < maxIterCD)
           qTemp = q;
-          fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1),q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1),q(:,2:N)]);
-          q(:,1) = fminsearch(fun,q(:,1));
+          r=q(:,1);
+          disp(beta);
+          fun = @(r)beta*I_q_theta_thetaSNew( S, K, [r,q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[r,q(:,2:N)]);
+          r = fminunc(fun,r);
+          q(:,1)=r;
           for j = 2:N-1
-             fun = @(x)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),q(:,j),q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),q(:,j),q(:,j+1:N)]);
-             q(:,j) = fminsearch(fun,q(:,j));
+             r = q(:,j);
+             fun = @(r)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),r,q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),r,q(:,j+1:N)]);
+             r = fminunc(fun,r);
+             q(:,j)=r;
           end
-          fun = @(x)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),q(:,N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),q(:,N)]);
-          q(:,N) = fminsearch(fun,q(:,N));
+          r = q(:,N);
+          fun = @(r)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),r], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),r]);
+          r = fminunc(fun,r);
+          q(:,N)=r;
           iterCD = iterCD + 1;
+%          disp('loop');
+
       end
+%      disp('after minimization');
+%     disp(sum(sum(q)));
+      pause;
    elseif nargin == 5
        q = P_h_given_x;
    else

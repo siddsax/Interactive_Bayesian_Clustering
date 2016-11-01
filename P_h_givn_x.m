@@ -6,8 +6,8 @@ function E = P_h_givn_x(X,k,prior,mu,co_var_mat)
 a = (2*pi)^(0.5*d);
 S = zeros(1,k);
 iV = zeros(d,d,k);
-for j=1:k,
-    if co_var_mat{j}==zeros(d,d), co_var_mat{j}=ones(d,d)*eps; end
+for j=1:k
+    if co_var_mat{j}==zeros(d,d), co_var_mat{j}=ones(d,d)*eps;  end
     S(j) = sqrt(det(co_var_mat{j}));
     iV(:,:,j) = inv(co_var_mat{j});    
 end
