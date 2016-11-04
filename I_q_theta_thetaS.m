@@ -7,17 +7,22 @@
 function [ req_p ] = I_q_theta_thetaS( s, K, q, co_var_mat_s, prior_s, mu_s, X, clust_rej, clust_acc )
 req_p = 0;
 [N,~] = size(X);
+P_q_hs = P_h_hs(q, co_var_mat_s, prior_s, X, mu_s, K);
+P_h_given_x = P_h_givn_x(X,K,prior_s,mu_s,co_var_mat_s);
+Marg_P_h = sum(P_h_given_x,1)/N
+pause;
 for i = 1:K
     marg_prob_q = 0;
-    P_q_hs = P_h_hs(q, co_var_mat_s, prior_s, X, mu_s, K);
     for j = 1:N
         marg_prob_q = marg_prob_q + q(i,j); 
     end    
+    marg_prob_q = marg_prob_q/N
+    pause;
     for j = 1:size(clust_acc(s,:),1)
-        req_p = req_p - P_q_hs(i,clust_acc(s,j))*log(P_q_hs(i,clust_acc(s,j)))/(marg_prob_h(X,co_var_mat_s{clust_acc(s,j)},prior_s(1,clust_acc(s,j)),mu_s(clust_acc(s,j),:))*marg_prob_q);
+        req_p = req_p - P_q_hs(i,clust_acc(s,j))*(log(P_q_hs(i,clust_acc(s,j))) - log(Marg_P_h(1,clust_acc(s,j))) - log(marg_prob_q));
     end
     for j = 1:size(clust_rej(s,:),1)
-        req_p = req_p + P_q_hs(i,clust_rej(s,j))*log(P_q_hs(i,clust_rej(s,j)))/(marg_prob_h(X,co_var_mat_s{clust_rej(s,j)},prior_s(1,clust_rej(s,j)),mu_s(clust_rej(s,j),:))*marg_prob_q);
+        req_p = req_p + P_q_hs(i,clust_rej(s,j))*(log(P_q_hs(i,clust_rej(s,j))) - log(Marg_P_h(1,clust_rej(s,j)))-log(marg_prob_q));
     end
 end    
 end

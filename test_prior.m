@@ -28,5 +28,6 @@ end
 %q = zeros(K,N);
 q = P_h_givn_x(X,k,priors,mu,co_var_mats)';
 %q = repmat(ones(1,N)/K,K,1);
+%disp(q);
 %Q = [r,q(:,2:N)];
 I_q_theta_thetaSNew( 1, K, q, theta_new , X, clst_rej, clst_acc )
