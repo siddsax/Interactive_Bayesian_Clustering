@@ -14,10 +14,11 @@ for i = 1:K
         marg_prob_q = marg_prob_q + q(i,j); 
     end    
     for j = 1:size(clust_acc(s,:),1)
-        req_p = req_p - P_q_hs(i,clust_acc(s,j))*log(P_q_hs(i,clust_acc(s,j)))/(marg_prob_h(X,co_var_mat_s{clust_acc(s,j)},prior_s(1,clust_acc(s,j)),mu_s(clust_acc(s,j),:))*marg_prob_q);
+        (marg_prob_h(X,co_var_mat(s,clust_acc(s,j)),prior(s,clust_acc(s,j)),mu(s,clust_acc(s,j))));
+        req_p = req_p - P_q_hs(i,clust_acc(s,j))*log(P_q_hs(i,clust_acc(s,j)))/(marg_prob_h(X,co_var_mat(s,clust_acc(s,j)),prior(s,clust_acc(s,j)),mu(s,clust_acc(s,j)))*marg_prob_q);
     end
     for j = 1:size(clust_rej(s,:),1)
-        req_p = req_p + P_q_hs(i,clust_rej(s,j))*log(P_q_hs(i,clust_rej(s,j)))/(marg_prob_h(X,co_var_mat_s{clust_rej(s,j)},prior_s(1,clust_rej(s,j)),mu_s(clust_rej(s,j),:))*marg_prob_q);
+        req_p = req_p + P_q_hs(i,clust_rej(s,j))*log(P_q_hs(i,clust_rej(s,j)))/(marg_prob_h(X,co_var_mat(s,clust_rej(s,j)),prior(s,clust_rej(s,j)),mu(s,clust_rej(s,j)))*marg_prob_q);
     end
 end    
 end

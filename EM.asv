@@ -12,7 +12,7 @@ priors = ones(1,K)/K;
 q = repmat(ones(1,N)/K,K,1);
 maxIterCD = 500;
 beta = 1;
-alpha = 100;
+a
 if nargin == 8
    [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
 end
@@ -38,17 +38,17 @@ while iter < max_iter
           qTemp = q;
           r=q(:,1);
           disp(beta);
-          fun = @(r)beta*I_q_theta_thetaSNew( S, K, [r,q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[r,q(:,2:N)],K,N);
+          fun = @(r)beta*I_q_theta_thetaSNew( S, K, [r,q(:,2:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[r,q(:,2:N)]);
           r = fminunc(fun,r);
           q(:,1)=r;
           for j = 2:N-1
              r = q(:,j);
-             fun = @(r)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),r,q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),r,q(:,j+1:N)],K,N);
+             fun = @(r)beta*I_q_theta_thetaSNew( S, K, [q(:,1:j-1),r,q(:,j+1:N)], theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x,[q(:,1:j-1),r,q(:,j+1:N)]);
              r = fminunc(fun,r);
              q(:,j)=r;
           end
           r = q(:,N);
-          fun = @(r)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),r], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),r],K,N);
+          fun = @(r)beta*I_q_theta_thetaSNew( S, K,  [q(:,1:N-1),r], theta_old , X, clst_rej, clst_acc ) + alpha * KLDiv(P_h_given_x,[q(:,1:N-1),r]);
           r = fminunc(fun,r);
           q(:,N)=r;
           iterCD = iterCD + 1;
@@ -109,6 +109,7 @@ while iter < max_iter
    end
    iter = iter + 1;
 end
+disp(log_lik);
 theta_new = {S,K,3};    
 % returning thr parameters of the model in theta which is a cell of size
 % {K,3}
