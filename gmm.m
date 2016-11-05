@@ -1,61 +1,67 @@
-function [ theta_new,BIC ] = gmm( X,K)
+function [ theta_new,BIC,P_h_given_x,mu ] = gmm( X,K)
+
 [N,D] = size(X);
-S = 1;
-mu = X( randsample(N,K),:);
-co_var_mat = cell(K);
-priors = ones(1,K)/K;
-q = repmat(ones(1,N)/K,K,1);
+
+iter = 1;
+max_iter = 20; % Max iterations for EM
+
+CLL = zeros(max_iter,1);
+ILL = zeros(max_iter,1);
+
+S = 1; %initializing the value for the meta iterations
+
+co_var_mat = cell(K);   % initializing the  co variance matrix for gaussians
 co_var_mat_init = transpose(X)*X;
 for i = 1:K
     co_var_mat{i} = co_var_mat_init;
 end
-iter = 1;
-% disp('All Variable initialized');
-% pause;
-max_iter = 1000;
+
+% initialize priors uniformly
+priors = ones(1,K)/K; 
+
+% we initialize the means totally randomly
+mu = X( randsample(N,K),:); 
+
 log_lik = zeros(1,max_iter);
 while iter < max_iter
+   disp(iter); 
    %The E step
-   P_h_given_x = transpose(P_h_givn_x(X, K, priors, mu, co_var_mat));
-   q = P_h_given_x;
-   disp('E Step Done');
+   P_h_given_x = P_h_givn_x(X, K, priors, mu, co_var_mat); %NXK
+   q = P_h_given_x; %NXK
+   %disp('E Step Done');
    %pause;
    %the M Step
-   N_ks = zeros(1,K);
-   mu = zeros(K,D);
+   % Update steps as a normal GMM
+   N_ks = sum(q,1);%1XK
+   priors = N_ks/N; %1XK
+   mu = P_h_given_x'*X; %KXD
+   for k = 1:K mu(k,:) = mu(k,:)/N_ks(1,k); end %KXD
    for i = 1:K
-       % Update steps as a normal GMM
-       % Update the N_ks
-       N_ks(1,i) = sum(q(i,:));%kXN
-       for j = 1:N 
-          mu(i,:) = mu(i,:) + q(i,j)*X(j,:);
-       end
-       mu(i,:) = (1/N_ks(1,i))*mu(i,:);
        co_var_mat{i} = zeros(D,D);
        for j = 1:N
-          co_var_mat{i} = co_var_mat{i} + q(i,j)*(X(j,:) - mu(i,:)).'*(X(j,:) - mu(i,:));
+          co_var_mat{i} = co_var_mat{i} + q(j,i)*(X(j,:) - mu(i,:)).'*(X(j,:) - mu(i,:));
        end
        co_var_mat{i} = (1/N_ks(1,i))*co_var_mat{i};
-       priors(1,i) = N_ks(1,i)/N;
    end
-   disp('M Step Done');
-   %pause;
-   P_h_given_x = P_h_givn_x(X, K, priors, mu, co_var_mat);
-   log_lik_iter = sum(priors*transpose(P_h_given_x));
-   % finding the log likelihood i.e $\sum_{i = 1}^{N}\sum_{j = 1}^{K}\pi_k*log(P(h,x|\theta)$
-   log_lik(1,iter) = log_lik_iter;
-   disp('Log Likelihood updated');
-   disp(log_lik(1,iter));
-   %pause;
-   if iter > 3
-       delta = log_lik(1,iter) - log_lik(1,iter-2);
-       %disp(delta);
-       if delta < 0
-           disp('EM has converged');
-           pause;
-           break;
-       end
+   %disp('M Step Done');
+   % compute *complete* and *incomplete* log likelihoods
+   cll = 0;
+   ill = 0;
+   deter = zeros(1,K);
+   for k = 1:K
+       deter(1,k) = det(co_var_mat{k});
+   end    
+   for n=1:N
+     ill_tmp = zeros(1, K);
+     for k=1:K
+         ill_tmp(k) = ill_tmp(k) + log(priors(k)) - (0.5)*(X(n,:)-mu(k,:))*inv(co_var_mat{k})*(X(n,:)-mu(k,:))' - 0.5*D*log(2*pi) - 0.5*log(deter(1,k));
+         cll = cll + P_h_given_x(n,k)*ill_tmp(k);
+     end
+     ill = ill + logsumexp(ill_tmp,2);
    end
+   CLL(iter) = cll;
+   ILL(iter) = ill;
+   
    iter = iter + 1;
 end
 theta_new = {S,K,3};    

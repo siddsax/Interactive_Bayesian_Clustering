@@ -14,8 +14,9 @@ fprintf(['Now, we test the K=2 implementation of gmm; if this looks\n' ...
 
 
 figure(2); title('figure 2');
-[mu,pk,z,si2,CLL,ILL,BIC] = gmm(X,2);
-plot_gmm(X,mu,z,BIC);
+[theta,BIC,P_h_given_x,mu] = gmm(X,2);
+%[mu,pk,z,si2,CLL,ILL,BIC] = gmm(X,2);
+plot_gmm(X,mu,P_h_given_x,BIC);
 
 mypause;
 
@@ -25,9 +26,9 @@ fprintf(['Now, we run sixteen times with different initializations and\n' ...
 
 figure(3); title('figure 3');
 for ii=1:16,
-  [mu,pk,z,si2,CLL,ILL,BIC] = gmm(X,3);
+  [theta,BIC,P_h_given_x,mu] = gmm(X,3);
   subplot(4,4,ii);
-  plot_gmm(X,mu,z,BIC);
+  plot_gmm(X,mu,P_h_given_x,BIC);
 end;
 mypause;
 
@@ -38,12 +39,13 @@ allS = Inf + zeros(size(allK));
 allMu = {}; allZ = {};
 for ii=1:length(allK),
   fprintf('  k=%d...', allK(ii));
+  pause;
   for rep=1:20,
-    [mu,pk,z,si2,BIC] = gmm(X,allK(ii)); %FIX THIS
+    [theta,BIC,P_h_given_x,mu] = gmm(X,allK(ii));
     if BIC < allS(ii),
       allS(ii) = BIC;
       allMu{ii} = mu;
-      allZ{ii} = z;
+      allZ{ii} = P_h_given_x;
     end;
   end;
 end;
