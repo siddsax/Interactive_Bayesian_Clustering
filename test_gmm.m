@@ -39,7 +39,7 @@ allMu = {}; allZ = {};
 for ii=1:length(allK),
   fprintf('  k=%d...', allK(ii));
   for rep=1:20,
-    [mu,pk,z,si2,CLL,ILL,BIC] = gmm(X,allK(ii));
+    [mu,pk,z,si2,BIC] = gmm(X,allK(ii)); %FIX THIS
     if BIC < allS(ii),
       allS(ii) = BIC;
       allMu{ii} = mu;

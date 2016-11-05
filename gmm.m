@@ -1,4 +1,4 @@
-function [ theta_new ] = gmm( X,K)
+function [ theta_new,BIC ] = gmm( X,K)
 [N,D] = size(X);
 S = 1;
 mu = X( randsample(N,K),:);
@@ -67,5 +67,6 @@ for k = 1:K
     theta_new{S,2,k} = mu(k,:); % the mean for a cluster
     theta_new{S,3,k} = priors(1,k); % prior for a cluster
 end
+BIC =  -2*log_lik(1,iter) + (K*D + D*D*K)*log(N);
 end    
 
