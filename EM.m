@@ -4,11 +4,10 @@
 % of the previous steps 4) clst_rej are the clusters that were rejected in
 % the last step 5) clst_acc are the clusters that were accepted in
 % the last step
-function [ theta_new ] = EM( X, max_iter, K,epsil, S, theta_old, clst_rej, clst_acc )
+function [ theta_new,score ] = EM( X, max_iter, K,epsil, S, theta_old, clst_rej, clst_acc )
 [N,D] = size(X);
-
+Factor_descent = .01;
 iter = 1;
-
 CLL = zeros(max_iter,1);
 ILL = zeros(max_iter,1);
 BIC = zeros(max_iter,1);
@@ -17,17 +16,15 @@ co_var_mat_init = transpose(X)*X;
 for i = 1:K
     co_var_mat{i} = co_var_mat_init;
 end
-
 % initialize priors uniformly
 priors = ones(1,K)/K;
-
 % we initialize the means totally randomly
 mu = X( randsample(N,K),:);
 
 q = repmat(ones(N,1)/K,1,K);
 maxIterCD = 500;
 beta = 1;
-alpha = 100;
+alpha = 10^(-10)/N;
 if nargin == 8
    [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
 end
@@ -40,15 +37,35 @@ while iter < max_iter
    %KLDiv to get the 'q'(arbitrary probability) matrix
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    if nargin == 8
-      q = q';
-      fun = @(q)beta*I_q_theta_thetaSNew( S, K, q, theta_old , X, clst_rej, clst_acc ) + alpha * KLDivNew(P_h_given_x',q,K,N);
-%      options = optimset('fminsearch','Algorithm','quasi-newton');
-      options = optimset('Display','iter','PlotFcns',@optimplotfval);
-      disp('Before Opt q');
-      [q, ~,~, ~] = fminsearch(fun,q,options);
-      q = q';
-      disp('After Opt q');
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%% Coordinate Descent %%
+    
+    count=0;
+    prev_cd=0;
+    new_cd=0;
+    q = q';
+    while(abs(prev_cd-new_cd)>epsil||count==0)
+        count = 1;
+        prev_cd = beta*abs(I_q_theta_thetaSNew( S, K, q, theta_old , X, clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x,q'));
+        for j=1:ceil(Factor_descent*N)
+            iteritems = randperm(N,ceil(Factor_descent*N));
+            old = q(:,iteritems(j));
+            fun = @(q)beta*abs(I_q_theta_thetaSNew( S, K, q(:,iteritems(j)), theta_old , X(iteritems(j),:), clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x(iteritems(j),:),q(:,iteritems(j))'));
+            options = optimset('FunValCheck','on','Display','final');
+            disp('Before Opt q');
+            [q,~,~,~]=fminsearch(fun,q,options);
+            q(:,iteritems(j)) = q(:,iteritems(j))/sum(q(:,iteritems(j)));
+%             old
+%             abs(I_q_theta_thetaSNew( S, K, old, theta_old , X(iteritems(j),:), clst_rej, clst_acc))
+%             alpha*sum(KLDiv(P_h_given_x,old'))
+%             new = q(:,iteritems(j))
+%             abs(I_q_theta_thetaSNew( S, K, new, theta_old , X(iteritems(j),:), clst_rej, clst_acc))
+%             alpha*sum(KLDiv(P_h_given_x,new'))
+%             pause;
+        end
+        new_cd = beta*abs(I_q_theta_thetaSNew( S, K, q, theta_old , X, clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x,q'));
+    end
+    q = q';
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
    elseif nargin == 5
        q = P_h_given_x; %NXK
    else
@@ -96,6 +113,7 @@ while iter < max_iter
    iter = iter + 1;
    disp(BIC(iter-1));
 end
+score = BIC(iter - 1);
 theta_new = {S,K,3};
 % returning thr parameters of the model in theta which is a cell of size
 % {K,3}
