@@ -4,7 +4,7 @@
 % of the previous steps 4) clst_rej are the clusters that were rejected in
 % the last step 5) clst_acc are the clusters that were accepted in
 % the last step
-function [ theta_new,score ] = EM( X, max_iter, K,~, theta_old, clst_rej, clst_acc )
+function [ theta_new,score ] = EM( X, max_iter, K,epsil, S, theta_old, clst_rej, clst_acc )
 [N,D] = size(X);
 Factor_descent = .01;
 iter = 1;
@@ -25,10 +25,8 @@ q = repmat(ones(N,1)/K,1,K);
 maxIterCD = 500;
 beta = 1;
 alpha = 10^(-10)/N;
-if nargin == 7
+if nargin == 8
    [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
-else 
-    S = 0;
 end
 
 while iter < max_iter
@@ -38,7 +36,7 @@ while iter < max_iter
    %implement stochastic co-ordinate descent using I_q_theta_thetaS and
    %KLDiv to get the 'q'(arbitrary probability) matrix
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   if nargin == 7
+   if nargin == 8
 %% Coordinate Descent %%
     
     co_=0;
@@ -69,7 +67,7 @@ while iter < max_iter
     end
     q = q';
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
-   elseif nargin == 4
+   elseif nargin == 5
        q = P_h_given_x; %NXK
    else
        disp('Wrong number of arguments in EM');
@@ -78,7 +76,7 @@ while iter < max_iter
    % Update steps as a normal GMM
    N_ks = sum(q,1);%1XK
    priors = N_ks/N; %1XK
-   if(nargin == 7) disp(size(q)); end
+   if(nargin == 8) disp(size(q)); end
    mu = q'*X; %KXD
    for k = 1:K mu(k,:) = mu(k,:)/N_ks(1,k); end %KXD
    for i = 1:K
@@ -117,12 +115,14 @@ while iter < max_iter
    disp(BIC(iter-1));
 end
 score = BIC(iter - 1);
-S = S + 1;
+disp
 theta_new = {S,K,3};
+disp(size(theta_new));
+pause;
 % returning thr parameters of the model in theta which is a cell of size
 % {K,3}
 %append the now generated theta at the end of theta_old
-if nargin == 7
+if nargin == 8
     for s = 1:S-1
        for k = 1:K 
          theta_new{s,1,k} = theta_old{s,1,k};

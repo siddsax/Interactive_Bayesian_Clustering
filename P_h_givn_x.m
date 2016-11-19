@@ -1,6 +1,7 @@
 % we find the probability of a single data point being generated from a
-% cluster. I.E P(h|x_i) is proportional to P(x_i|h)*P(h). Here P(x_i|h) is calculaated using the normal 
-% probab dist function whereas the P(h) is the prior_k found using parameters in last iteration. 
+% cluster. I.E P(h|x_i) is proportional to P(x_i|h)*P(h). Here P(x_i|h) is calculaated 
+% using the normal probab dist function whereas the P(h) is the prior_k found using 
+% parameters in last iteration. 
 function E = P_h_givn_x(X,k,prior,mu,co_var_mat)
 [n,d] = size(X);
 a = (2*pi)^(0.5*d);

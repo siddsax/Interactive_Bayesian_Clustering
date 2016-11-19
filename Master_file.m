@@ -14,7 +14,7 @@ title 'Randomly Generated Data';
 [N,D] = size(X);
 K = 3;
 %%
-[theta,BIC] = EM(X, max_iter, K,eps,1);
+[theta,BIC] = EM(X, max_iter, K,eps);
 S = 1;
 co_var_mat = {K};
 mu = zeros(K,D);
@@ -27,13 +27,8 @@ end
 Probabilities = P_h_givn_x(X, K,prior, mu, co_var_mat);
 figure(2); title('figure 2');
 plot_gmm(X,mu,Probabilities,BIC);
+S = S + 1;
 %%
-%  for i = 1:K
-%     c=flipud(unique(sort(Probabilities(:,i))));
-%     result=c(1:5); 
-%     ind=find(Probabilities(:,i)>=c(10));
-%     disp(ind);
-%  end    
  acc_clst = [];
  rej_clst = [];
  str = input('Do you want feedback Y/N','s');
@@ -50,7 +45,7 @@ plot_gmm(X,mu,Probabilities,BIC);
          rej_clst = [rej_clst,indice];
      end
  end    
- [theta] = EM(X, max_iter, K,eps,2,theta, rej_clst, acc_clst);
+ [theta,BIC] = EM(X, max_iter, K,eps,theta, rej_clst, acc_clst);
  for k = 1:K
    co_var_mat{k} = theta{S,1,k};
    mu(k,:) = theta{S,2,k};
@@ -65,3 +60,4 @@ Probabilities = P_h_givn_x(X, K,prior, mu, co_var_mat);
 %  end    
 figure(3); title('figure 3');
 plot_gmm(X,mu,Probabilities,BIC);
+S = S + 1;
