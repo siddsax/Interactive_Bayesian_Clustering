@@ -6,8 +6,9 @@
 % the last step
 function [ theta_new,score ] = EM( X, max_iter, K,~, theta_old, clst_rej, clst_acc )
 [N,D] = size(X);
-Factor_descent = .01;
 iter = 1;
+frac_to_iter = .05;
+eps = 10^-19;
 CLL = zeros(max_iter,1);
 ILL = zeros(max_iter,1);
 BIC = zeros(max_iter,1);
@@ -20,11 +21,9 @@ end
 priors = ones(1,K)/K;
 % we initialize the means totally randomly
 mu = X( randsample(N,K),:);
-
 q = repmat(ones(N,1)/K,1,K);
-maxIterCD = 500;
 beta = 1;
-alpha = 10^(-10)/N;
+alpha = 10^(-19);
 if nargin == 7
    [S,~,~]=size(theta_old);  %Calculate the number of previous iterations
 else 
@@ -32,43 +31,41 @@ else
 end
 
 while iter < max_iter
+   disp(iter);
    %The E step
    %Calculate P(h|theta, x_j) for all j
    P_h_given_x = P_h_givn_x(X, K, priors, mu, co_var_mat); %NXK
    %implement stochastic co-ordinate descent using I_q_theta_thetaS and
    %KLDiv to get the 'q'(arbitrary probability) matrix
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    if nargin == 7
 %% Coordinate Descent %%
-    
+    KL_avg=0;
+    IQ_avg=0;
+    fval_avg=0;
     co_=0;
     prev_cd=0;
     new_cd=0;
+    q = P_h_given_x; %NXK
     q = q';
-    while(co_<2)
+    epsilon_val = -1;
+    while(co_< 20 && epsilon_val ~= 0)
         co_=co_+ 1;
-        prev_cd = beta*abs(I_q_theta_thetaSNew( S, K, q, theta_old , X, clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x,q'));
-        for j=1:N
-            %iteritems = randperm(N,ceil(Factor_descent*N));
-            old = q(:,j);
-            r=q(:,j);
-            fun = @(r)beta*abs(I_q_theta_thetaSNew( S, K, r, theta_old , X(j,:), clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x(j,:),q(:,j)'));
-            options = optimset('FunValCheck','on','Display','final');
-            disp('Before Opt q');
-            [q(:,j),~,~,~]=fminsearch(fun,q(:,j),options);
-            q(:,j) = q(:,j)/sum(q(:,j));
-%             old
-%             abs(I_q_theta_thetaSNew( S, K, old, theta_old , X(iteritems(j),:), clst_rej, clst_acc))
-%             alpha*sum(KLDiv(P_h_given_x,old'))
-%             new = q(:,iteritems(j))
-%             abs(I_q_theta_thetaSNew( S, K, new, theta_old , X(iteritems(j),:), clst_rej, clst_acc))
-%             alpha*sum(KLDiv(P_h_given_x,new'))
-%             pause;
+        prev_cd = new_cd;
+        iterit = randperm(N,ceil(frac_to_iter*N));
+        for j=1:ceil(frac_to_iter*N)
+            fun = @(r)beta*abs(I_q_theta_thetaSNew( S, K, r, theta_old , X(iterit(j),:), clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x(iterit(j),:),r'));
+            options = optimset('FunValCheck','on');
+            %disp('Before Opt q');
+            [q(:,iterit(j)),fval_new,~,~]=fminsearch(fun,q(:,iterit(j)),options);
+            q(:,iterit(j)) = q(:,iterit(j))/sum(q(:,iterit(j)));
+            %disp(q(:,j));
+            fval_avg=fval_avg+fval_new;
+            fval_latest = fval_new;
         end
-        new_cd = beta*abs(I_q_theta_thetaSNew( S, K, q, theta_old , X, clst_rej, clst_acc)) + alpha * sum(KLDiv(P_h_given_x,q'));
+        new_cd = fval_latest;
     end
+    epsilon_val_final = epsilon_val 
     q = q';
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
    elseif nargin == 4
        q = P_h_given_x; %NXK
    else
@@ -78,7 +75,6 @@ while iter < max_iter
    % Update steps as a normal GMM
    N_ks = sum(q,1);%1XK
    priors = N_ks/N; %1XK
-   if(nargin == 7) disp(size(q)); end
    mu = q'*X; %KXD
    for k = 1:K mu(k,:) = mu(k,:)/N_ks(1,k); end %KXD
    for i = 1:K
@@ -107,8 +103,9 @@ while iter < max_iter
    CLL(iter) = cll;
    ILL(iter) = ill;
    BIC(iter) =  -2*ill + (K*D + D*D*K)*log(N);
-   if iter > 5
-      if BIC(iter-1) - BIC(iter) < .0001
+   if iter > 2
+      disp(BIC(iter-1) - BIC(iter));
+      if abs(BIC(iter-1) - BIC(iter)) < .001
           disp('EM has converged');
           break;
       end

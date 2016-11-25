@@ -10,7 +10,15 @@ iV = zeros(d,d,k);
 for j=1:k
     if co_var_mat{j} == zeros(d,d), co_var_mat{j}=ones(d,d)*eps;  end
     S(j) = sqrt(det(co_var_mat{j}));
+    if ~(isreal(S(j)))
+        disp(S(j));
+        pause;
+    end   
     iV(:,:,j) = inv(co_var_mat{j});    
+    if ~(isreal(co_var_mat{j}))
+        disp(co_var_mat{j});
+        pause;
+    end    
 end
 E = zeros(n,k);
 for i=1:n    
